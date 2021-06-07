@@ -79,6 +79,15 @@ public class CertRepository {
         return executeInsert(query);
     }
 
+
+    public boolean updateUser(String monitorName, String hostName, String alertDays, String groupEmail, String port) throws Exception {
+         //  String groupEmail = getGroupEmailOfUser(userId);
+           String query = String.format("Update  monitors Set hostname= '"+hostName+"', alertDays= '"+alertDays+"'," +
+                   " port='"+port+"', groupEmail ='"+groupEmail+"' where monitorName = '%s'", monitorName);
+        return executeInsert(query);
+
+    }
+
     private String getGroupEmailOfUser(String userId) throws Exception {
         String query = "SELECT groupId FROM users where userName = '" + userId + "'";
         return executeQuery(query);
@@ -97,6 +106,7 @@ public class CertRepository {
         }
         return result;
     }
+
 
 
     private boolean executeInsert(String query) throws Exception {

@@ -1,4 +1,3 @@
-
 DROP DATABASE IF EXISTS certmonitor;
 CREATE DATABASE certmonitor;
 
@@ -10,7 +9,10 @@ CREATE TABLE users (
     groupId     VARCHAR(50) NOT NULL
 );
 
-INSERT INTO users(userName,pswd,groupId) VALUES('sysadmin', 'test', 'groupA');
+INSERT INTO users(userName,pswd,groupId) VALUES('user1@gmail.com', 'asdf', 'g1@gmail.com');
+INSERT INTO users(userName,pswd,groupId) VALUES('user2@gmail.com', 'asdf', 'g2@gmail.com');
+
+select * from users
 
 CREATE TABLE monitors (
 	monitorName	    VARCHAR(50) NOT NULL PRIMARY KEY,
@@ -21,3 +23,7 @@ CREATE TABLE monitors (
     port            VARCHAR(50),
     status 	        BOOLEAN DEFAULT TRUE
 );
+
+select * from monitors
+
+-- drop table monitors

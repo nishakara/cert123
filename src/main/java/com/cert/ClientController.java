@@ -117,4 +117,19 @@ public class ClientController {
         }
     }
 
+    @PutMapping("updateMonitor")
+    public ResponseEntity<?> updateMonitor(Model model, @RequestParam String monitorName, @RequestParam String hostName,
+                                           @RequestParam String alertDays,  @RequestParam String groupEmail, @RequestParam String port) throws Exception {
+        System.out.println("Create-Monitor request received : " + monitorName + "|" + hostName + "|" + alertDays + "|" + port);
+        try {
+           credentialManager.update(monitorName, hostName, alertDays, groupEmail, port);
+            JSONObject response = new JSONObject();
+            response.put("message", "Create Account Success");
+            response.put("username", monitorName);
+            return new ResponseEntity<>(response.toString(), HttpStatus.OK);
+        } catch (Exception e) {
+            return new ResponseEntity<>("Error creating monitor [" + monitorName +"], error : " + e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
 }

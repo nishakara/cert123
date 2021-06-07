@@ -32,4 +32,17 @@ public class CredentialManager {
             throw new Exception("User account already exists");
         }
     }
+
+    public boolean update(String monitorName, String hostName, String alertDays, String groupEmail, String port) throws Exception {
+        if (!certRepository.isMonitorExist(monitorName)) {
+            System.out.println("Creating new account for the user ID : " + monitorName);
+            return certRepository.updateUser(monitorName,hostName,alertDays, groupEmail, port);
+        } else {
+            System.out.println("User account already exists");
+            throw new Exception("User account already exists");
+        }
+    }
+
+
+
 }
