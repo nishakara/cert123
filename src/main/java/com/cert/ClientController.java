@@ -1,6 +1,7 @@
 package com.cert;
 
-import org.json.JSONException;
+import com.cert.model.MonitorOpResultWrapper;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -12,6 +13,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+import static com.cert.model.MonitorOpResultWrapper.Status.SUCCESS;
+
 @Controller
 public class ClientController {
 
@@ -20,6 +23,9 @@ public class ClientController {
 
     @Autowired
     private MonitorManager monitorManager;
+
+    @Autowired
+    private CertProcessor certProcessor;
 
     @GetMapping("/")
     public String loadModelPage(Model model) {
@@ -75,10 +81,36 @@ public class ClientController {
                                 @RequestParam String alertDays,  @RequestParam String groupEmail, @RequestParam String port) throws Exception {
         System.out.println("Create-Monitor request received : " + monitorName + "|" + hostName + "|" + alertDays + "|" + port);
         try {
-            JSONObject response = monitorManager.createMonitor(monitorName, hostName, alertDays, groupEmail, port);
-            return new ResponseEntity<>(response.toString(), HttpStatus.OK);
+            MonitorOpResultWrapper operationResult = monitorManager.createMonitor(monitorName, hostName, alertDays, groupEmail, port);
+            if (operationResult.getStatus()== SUCCESS){
+                return new ResponseEntity<>(operationResult.getResponse().toString(), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(operationResult.getResponse().toString(), HttpStatus.BAD_REQUEST);
+            }
         } catch (Exception e) {
-            return new ResponseEntity<>("Error creating monitor [" + monitorName +"], error : " + e.getMessage(), HttpStatus.BAD_REQUEST);
+            e.printStackTrace();
+            String message = new JSONObject().put("message", "Error creating monitor [" + monitorName +"], error : " + e.getMessage()).toString();
+            return new ResponseEntity<>(message, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @PostMapping("UpdateMonitor")
+    public ResponseEntity<?> updateMonitor(Model model,
+                                           @RequestParam String id, @RequestParam String monitorName,
+                                           @RequestParam String hostName, @RequestParam String alertDays,
+                                           @RequestParam String groupEmail, @RequestParam String port) {
+        System.out.println("Update-Monitor : " + id + "|" + monitorName + "|" + hostName + "|" + alertDays + "|" + groupEmail + "|" + port);
+        try {
+            MonitorOpResultWrapper operationResult = monitorManager.updateMonitor(Integer.parseInt(id.trim()), monitorName, hostName, alertDays, groupEmail, port);
+            if (operationResult.getStatus()== SUCCESS){
+                return new ResponseEntity<>(operationResult.getResponse().toString(), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(operationResult.getResponse().toString(), HttpStatus.BAD_REQUEST);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            String message = new JSONObject().put("message", "Error updating monitor [" + monitorName + "], error : " + e.getMessage()).toString();
+            return new ResponseEntity<>(message, HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -91,44 +123,50 @@ public class ClientController {
         } catch (Exception e) {
             System.err.println("Error occurred while retrieving monitors :" + e.getMessage());
             e.printStackTrace();
-            return new ResponseEntity<>("Error occurred while retrieving monitors" + e.getMessage() ,HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Error occurred while retrieving monitors : " + e.getMessage() , HttpStatus.BAD_REQUEST);
         }
     }
 
     @PostMapping("RunMonitor")
-    public String runMonitor(Model model, @RequestParam String monitorName) {
+    public ResponseEntity<?> runMonitor(Model model, @RequestParam String monitorName) {
         System.out.println("Run-Monitor request received for the monitor : " + monitorName);
         try {
-            // run monitor
+            MonitorOpResultWrapper operationResult = certProcessor.getCertInfo(monitorName);
+            if (operationResult.getStatus() == SUCCESS){
+                return new ResponseEntity<>(operationResult.getResponse().toString(), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(operationResult.getResponse().toString(), HttpStatus.BAD_REQUEST);
+            }
         } catch (Exception e) {
+            System.err.println("Error occurred while running monitor : [" + monitorName + "] " + e.getMessage());
             e.printStackTrace();
+            return new ResponseEntity<>("Error occurred while running monitor : " + e.getMessage() , HttpStatus.BAD_REQUEST);
         }
-        return "monitors";
     }
 
     @DeleteMapping("DeleteMonitor")
-    public ResponseEntity<?> deleteMonitor(Model model, @RequestParam String monitorName) {
-        System.out.println("Delete-Monitor request received for the monitor : " + monitorName);
+    public ResponseEntity<?> deleteMonitor(Model model, @RequestParam String monitorId) {
+        System.out.println("Delete-Monitor request received for the monitor with ID : " + monitorId);
         try {
-            JSONObject response = monitorManager.deleteMonitor(monitorName);
-            return new ResponseEntity<>(response.toString(), HttpStatus.OK);
+            MonitorOpResultWrapper operationResult = monitorManager.deleteMonitor(monitorId);
+            if (operationResult.getStatus() == SUCCESS){
+                return new ResponseEntity<>(operationResult.getResponse().toString(), HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(operationResult.getResponse().toString(), HttpStatus.BAD_REQUEST);
+            }
         } catch (Exception e) {
-            return new ResponseEntity<>("Error deleting monitor [" + monitorName +"], error : " + e.getMessage(), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Error deleting monitor [" + monitorId +"], error : " + e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
 
-    @PutMapping("updateMonitor")
-    public ResponseEntity<?> updateMonitor(Model model, @RequestParam String monitorName, @RequestParam String hostName,
-                                           @RequestParam String alertDays,  @RequestParam String groupEmail, @RequestParam String port) throws Exception {
-        System.out.println("Create-Monitor request received : " + monitorName + "|" + hostName + "|" + alertDays + "|" + port);
+    @GetMapping("getMonitorExecutionDetails/{monitorId}")
+    public ResponseEntity<?> getMonitorExecutionDetails(@PathVariable String monitorId) {
+        System.out.println("GetMonitorExecutionDetails request received for the monitor with ID : " + monitorId);
         try {
-           credentialManager.update(monitorName, hostName, alertDays, groupEmail, port);
-            JSONObject response = new JSONObject();
-            response.put("message", "Create Account Success");
-            response.put("username", monitorName);
+            JSONArray response = monitorManager.getMonitorExecutionDetails(monitorId);
             return new ResponseEntity<>(response.toString(), HttpStatus.OK);
         } catch (Exception e) {
-            return new ResponseEntity<>("Error creating monitor [" + monitorName +"], error : " + e.getMessage(), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Error deleting monitor [" + monitorId +"], error : " + e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
 

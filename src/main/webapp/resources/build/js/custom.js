@@ -6,6 +6,9 @@
  *     // code here
  * });
  */
+
+var executionData = [];
+
 (function($,sr){
     // debouncing function from John Hann
     // http://unscriptable.com/index.php/2009/03/20/debouncing-javascript-methods/
@@ -336,129 +339,58 @@ if (typeof NProgress != 'undefined') {
 	function gd(year, month, day) {
 		return new Date(year, month - 1, day).getTime();
 	}
-	  
-	
-	function init_flot_chart(){
-		
-		if( typeof ($.plot) === 'undefined'){ return; }
-		
-		console.log('init_flot_chart');
-		
-		
-		
-		var arr_data1 = [
-			[gd(2012, 1, 1), 17],
-			[gd(2012, 1, 2), 74],
-			[gd(2012, 1, 3), 6],
-			[gd(2012, 1, 4), 39],
-			[gd(2012, 1, 5), 20],
-			[gd(2012, 1, 6), 85],
-			[gd(2012, 1, 7), 7]
-		];
 
-		var arr_data2 = [
-		  [gd(2012, 1, 1), 82],
-		  [gd(2012, 1, 2), 23],
-		  [gd(2012, 1, 3), 66],
-		  [gd(2012, 1, 4), 9],
-		  [gd(2012, 1, 5), 119],
-		  [gd(2012, 1, 6), 6],
-		  [gd(2012, 1, 7), 9]
-		];
-		
-		var arr_data3 = [
-			[0, 1],
-			[1, 9],
-			[2, 6],
-			[3, 10],
-			[4, 5],
-			[5, 17],
-			[6, 6],
-			[7, 10],
-			[8, 7],
-			[9, 11],
-			[10, 35],
-			[11, 9],
-			[12, 12],
-			[13, 5],
-			[14, 3],
-			[15, 4],
-			[16, 9]
-		];
-		
-		var chart_plot_02_data = [];
-		
-		var chart_plot_03_data = [
-			[0, 1],
-			[1, 9],
-			[2, 6],
-			[3, 10],
-			[4, 5],
-			[5, 17],
-			[6, 6],
-			[7, 10],
-			[8, 7],
-			[9, 11],
-			[10, 35],
-			[11, 9],
-			[12, 12],
-			[13, 5],
-			[14, 3],
-			[15, 4],
-			[16, 9]
-		];
-		
-		
-		for (var i = 0; i < 30; i++) {
-		  chart_plot_02_data.push([new Date(Date.today().add(i).days()).getTime(), randNum() + i + i + 10]);
+
+function getMonitorExecutionDetails() {
+	console.log("loading monitor execution details");
+	var monitorId = "1";
+	$.ajax({
+		async: true,
+		crossDomain: false,
+		url: getContextPath() + "/getMonitorExecutionDetails/" + monitorId,
+		method: "GET",
+		dataType: 'json',
+		success: function (data) {
+			console.log("Got execution details" + JSON.stringify(data));
+			for (var i = data.length - 1; i >= 0; i--) {
+				executionData.push([Date.parse(data[i].Date), data[i].successPercentage]) ;
+			}
+			init_flot_chart();
+		},
+		error: function (er) {
+			console.error("Error loading monitors table. Error response : " + er.responseText);
+			alert("Error loading monitors table : " + er.responseText);
 		}
-		
-		
-		var chart_plot_01_settings = {
-          series: {
-            lines: {
-              show: false,
-              fill: true
-            },
-            splines: {
-              show: true,
-              tension: 0.4,
-              lineWidth: 1,
-              fill: 0.4
-            },
-            points: {
-              radius: 0,
-              show: true
-            },
-            shadowSize: 2
-          },
-          grid: {
-            verticalLines: true,
-            hoverable: true,
-            clickable: true,
-            tickColor: "#d5d5d5",
-            borderWidth: 1,
-            color: '#fff'
-          },
-          colors: ["rgba(38, 185, 154, 0.38)", "rgba(3, 88, 106, 0.38)"],
-          xaxis: {
-            tickColor: "rgba(51, 51, 51, 0.06)",
-            mode: "time",
-            tickSize: [1, "day"],
-            //tickLength: 10,
-            axisLabel: "Date",
-            axisLabelUseCanvas: true,
-            axisLabelFontSizePixels: 12,
-            axisLabelFontFamily: 'Verdana, Arial',
-            axisLabelPadding: 10
-          },
-          yaxis: {
-            ticks: 8,
-            tickColor: "rgba(51, 51, 51, 0.06)",
-          },
-          tooltip: false
-        }
-		
+	});
+}
+
+function init_flot_chart(){
+
+		if( typeof ($.plot) === 'undefined'){ return; }
+
+		console.log('init_flot_chart');
+
+
+
+		var chart_plot_02_data = [];
+
+		console.log("Exec data : " + JSON.stringify(executionData));
+
+		// for (var i = 0; i < 30; i++) {
+		// 	chart_plot_02_data.push([new Date(Date.today().add(i).days()).getTime(), randNum() + i + i + 10]);
+		// }
+
+		if (executionData !== null) {
+			executionData.forEach(function (executionDetail) {
+				chart_plot_02_data.push(
+					[
+						new Date(executionDetail[0]).getTime(),
+						executionDetail[1]
+					]);
+			});
+		}
+		console.log("Chart data : " + chart_plot_02_data)
+
 		var chart_plot_02_settings = {
 			grid: {
 				show: true,
@@ -512,6 +444,7 @@ if (typeof NProgress != 'undefined') {
 			defaultTheme: false
 			},
 			yaxis: {
+				max: 130,
 				min: 0
 			},
 			xaxis: {
@@ -523,37 +456,6 @@ if (typeof NProgress != 'undefined') {
 			}
 		};	
 	
-		var chart_plot_03_settings = {
-			series: {
-				curvedLines: {
-					apply: true,
-					active: true,
-					monotonicFit: true
-				}
-			},
-			colors: ["#26B99A"],
-			grid: {
-				borderWidth: {
-					top: 0,
-					right: 0,
-					bottom: 1,
-					left: 1
-				},
-				borderColor: {
-					bottom: "#7F8790",
-					left: "#7F8790"
-				}
-			}
-		};
-        
-		
-        if ($("#chart_plot_01").length){
-			console.log('Plot1');
-			
-			$.plot( $("#chart_plot_01"), [ arr_data1, arr_data2 ],  chart_plot_01_settings );
-		}
-		
-		
 		if ($("#chart_plot_02").length){
 			console.log('Plot2');
 			
@@ -569,25 +471,7 @@ if (typeof NProgress != 'undefined') {
 			}], chart_plot_02_settings);
 			
 		}
-		
-		if ($("#chart_plot_03").length){
-			console.log('Plot3');
-			
-			
-			$.plot($("#chart_plot_03"), [{
-				label: "Registrations",
-				data: chart_plot_03_data,
-				lines: {
-					fillColor: "rgba(150, 202, 89, 0.12)"
-				}, 
-				points: {
-					fillColor: "#fff"
-				}
-			}], chart_plot_03_settings);
-			
-		};
-	  
-	} 
+	}
 	
 		
 	/* STARRR */
@@ -682,59 +566,7 @@ if (typeof NProgress != 'undefined') {
 	}  
 	   
 	   
-	function init_chart_doughnut(){
-				
-		if( typeof (Chart) === 'undefined'){ return; }
-		
-		console.log('init_chart_doughnut');
-	 
-		if ($('.canvasDoughnut').length){
-			
-		var chart_doughnut_settings = {
-				type: 'doughnut',
-				tooltipFillColor: "rgba(51, 51, 51, 0.55)",
-				data: {
-					labels: [
-						"Symbian",
-						"Blackberry",
-						"Other",
-						"Android",
-						"IOS"
-					],
-					datasets: [{
-						data: [15, 20, 30, 10, 30],
-						backgroundColor: [
-							"#BDC3C7",
-							"#9B59B6",
-							"#E74C3C",
-							"#26B99A",
-							"#3498DB"
-						],
-						hoverBackgroundColor: [
-							"#CFD4D8",
-							"#B370CF",
-							"#E95E4F",
-							"#36CAAB",
-							"#49A9EA"
-						]
-					}]
-				},
-				options: { 
-					legend: false, 
-					responsive: false 
-				}
-			}
-		
-			$('.canvasDoughnut').each(function(){
-				
-				var chart_element = $(this);
-				var chart_doughnut = new Chart( chart_element, chart_doughnut_settings);
-				
-			});			
-		
-		}  
-	   
-	}
+
 	   
 	function init_gauge() {
 			
@@ -5005,9 +4837,9 @@ if (typeof NProgress != 'undefined') {
 	   
 	   
 	$(document).ready(function() {
-				
+		getMonitorExecutionDetails();
 		init_sparklines();
-		init_flot_chart();
+		// init_flot_chart();
 		init_sidebar();
 		init_wysiwyg();
 		init_InputMask();
@@ -5031,7 +4863,6 @@ if (typeof NProgress != 'undefined') {
 		init_select2();
 		init_validator();
 		init_DataTables();
-		init_chart_doughnut();
 		init_gauge();
 		init_PNotify();
 		init_starrr();
